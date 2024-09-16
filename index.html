@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Hacking Simulation Game</title>
+    <style>
+        /* CSS Styling */
+
+        body {
+            background-color: #000;
+            color: #00FF00;
+            font-family: 'Courier New', Courier, monospace;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #terminal {
+            background-color: #000;
+            border: 1px solid #00FF00;
+            padding: 20px;
+            width: 80%;
+            height: 80%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #output {
+            flex: 1;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        #input-line {
+            display: flex;
+        }
+
+        .prompt {
+            margin-right: 10px;
+        }
+
+        #command-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #00FF00;
+            flex: 1;
+            font-family: inherit;
+            font-size: 1em;
+        }
+
+        /* Scrollbar Styling */
+        #terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #terminal::-webkit-scrollbar-thumb {
+            background-color: #00FF00;
+            border-radius: 4px;
+        }
+
+        #terminal::-webkit-scrollbar-track {
+            background: #333;
+        }
+
+        /* Winning Message Styling */
+        #winning-message {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #001100;
+            border: 2px solid #00FF00;
+            padding: 30px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        #winning-message h1 {
+            color: #00FF00;
+            margin-bottom: 20px;
+        }
+
+        #restart-button {
+            background-color: #00FF00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        #restart-button:hover {
+            background-color: #33FF33;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal">
+        <div id="output"></div>
+        <div id="input-line">
+            <span class="prompt">user@hacksim:</span>
+            <input type="text" id="command-input" autofocus autocomplete="off">
+        </div>
+        <div id="winning-message">
+            <h1>Mission Accomplished!</h1>
+            <p>Congratulations! You've successfully completed your mission.</p>
+            <button id="restart-button">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        /* JavaScript Functionality */
+
+        const terminalOutput = document.getElementById('output');
+        const commandInput = document.getElementById('command-input');
+        const winningMessage = document.getElementById('winning-message');
+        const restartButton = document.getElementById('restart-button');
+
+        // Game Variables
+        let targetIP;
+        let goal;
+        let requirements;
+        let password;
+        let passwordObtained;
+        let connected;
+        let hackedMethodsUsed;
+        let fileSystem;
+        let currentDirectory;
+        let directoryPath;
+        let gameCompleted;
+        let localFileSystem;
+
+        // Initialize Game
+        initializeGame();
+
+        // Event Listener for Enter Key
+        commandInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const input = commandInput.value.trim();
+                if (input !== '') {
+                    executeCommand(input);
+                    commandInput.value = '';
+                }
+            }
+        });
+
+        // Event Listener for Restart Button
+        restartButton.addEventListener('click', initializeGame);
+
+        function initializeGame() {
+            // Reset Variables
+            targetIP = generateRandomIP();
+            goal = generateRandomGoal();
+            requirements = generateRandomRequirements();
+            password = generateRandomPassword();
+            passwordObtained = false;
+            connected = false;
+            hackedMethodsUsed = [];
+            fileSystem = generateFileSystem();
+            currentDirectory = fileSystem;
+            directoryPath = '/';
+            gameCompleted = false;
+            localFileSystem = generateLocalFileSystem();
+
+            // Clear Terminal and Hide Winning Message
+            terminalOutput.innerText = '';
+            winningMessage.style.display = 'none';
+
+            // Initialize Game
+            printWelcomeMessage();
+            printGameInstructions();
+        }
+
+        // Command Execution
+        function executeCommand(input) {
+            appendOutput(`\nuser@hacksim:${input}`);
+            const args = input.split(' ');
+            const command = args[0].toLowerCase();
+            const param = args.slice(1).join(' ');
+
+            if (gameCompleted && command !== 'exit') {
+                appendOutput("\nMission accomplished! Please type 'exit' to end the game.");
+                return;
+            }
+
+            switch(command) {
+                case 'help':
+                    if (args.length > 1) {
+                        commandSpecificHelp(args[1].toLowerCase());
+                    } else {
+                        printHelp();
+                    }
+                    break;
+                case 'scan':
+                    scanNetwork();
+                    break;
+                case 'connect':
+                    connectToIP(param);
+                    break;
+                case 'info':
+                    showInfo();
+                    break;
+                case 'hack':
+                    attemptHack(param);
+                    break;
+                case 'ls':
+                    listDirectory();
+                    break;
+                case 'cd':
+                    changeDirectory(param);
+                    break;
+                case 'pwd':
+                    printWorkingDirectory();
+                    break;
+                case 'cat':
+                    displayFile(param);
+                    break;
+                case 'delete':
+                    deleteFile(param);
+                    break;
+                case 'mkdir':
+                    makeDirectory(param);
+                    break;
+                case 'upload':
+                    uploadFile(param);
+                    break;
+                case 'hint':
+                    provideHint();
+                    break;
+                case 'clear':
+                    clearTerminal();
+                    break;
+                case 'exit':
+                    exitGame();
+                    break;
+                default:
+                    appendOutput(`\nCommand not found: ${command}`);
+            }
+        }
+
+        // Utility Functions
+
+        function appendOutput(text) {
+            terminalOutput.innerText += text;
+            terminalOutput.scrollTop = terminalOutput.scrollHeight; // Auto-scroll to the bottom
+        }
+
+        function printWelcomeMessage() {
+            appendOutput("Welcome to Advanced Hacking Simulation Game!");
+        }
+
+        function printGameInstructions() {
+            appendOutput(`\nYour goal: ${goal}\nTarget IP: ${targetIP}\nType 'help' to see available commands.`);
+        }
+
+        function printHelp() {
+            const helpText = `
+Available Commands:
+- help: Show this help message
+- help [command]: Show help for a specific command
+- scan: Scan the network for available IPs
+- connect [IP]: Connect to a specific IP
+- info: Get information about the current connection
+- hack [method]: Attempt to hack using a specific method
+- ls: List files and directories in the current directory
+- cd [directory]: Change the current directory
+- pwd: Display the current directory path
+- cat [file]: Display the contents of a file
+- delete [file]: Delete a file
+- mkdir [directory]: Create a new directory
+- upload [file]: Upload a file to the target system
+- hint: Get a hint on how to achieve your goal
+- clear: Clear the terminal
+- exit: Exit the game
+
+For command-specific help, type 'help [command]'.
+            `;
+            appendOutput(helpText);
+        }
+
+        function commandSpecificHelp(cmd) {
+            const commands = {
+                'hack': `
+Usage: hack [method]
+
+Methods:
+- ${requirements.join(', ')}
+                `,
+                'connect': `
+Usage: connect [IP]
+
+Connect to the specified IP address. Authentication is required before connecting.
+                `,
+                'ls': `
+Usage: ls
+
+List all files and directories in the current directory.
+                `,
+                'cd': `
+Usage: cd [directory]
+
+Change the current directory to the specified directory.
+                `,
+                'cat': `
+Usage: cat [file]
+
+Display the contents of the specified file.
+                `,
+                'delete': `
+Usage: delete [file]
+
+Delete the specified file from the current directory.
+                `,
+                'mkdir': `
+Usage: mkdir [directory]
+
+Create a new directory with the specified name in the current directory.
+                `,
+                'upload': `
+Usage: upload [file]
+
+Upload a file from your local computer to the target system. Ensure you are connected and specify the correct file name.
+                `,
+                'hint': `
+Usage: hint
+
+Get a hint on how to achieve your current goal.
+                `,
+                'scan': `
+Usage: scan
+
+Scan the network and display available IP addresses.
+                `,
+                'info': `
+Usage: info
+
+Display information about the current connection and mission status.
+                `
+            };
+
+            if (commands[cmd]) {
+                appendOutput(commands[cmd]);
+            } else {
+                appendOutput(`\nNo help available for '${cmd}'.`);
+            }
+        }
+
+        function scanNetwork() {
+            const scannedIP = generateRandomIP();
+            appendOutput(`\nScanning network...\nFound IP: ${scannedIP}`);
+        }
+
+        function connectToIP(ip) {
+            if (!ip) {
+                appendOutput("\nUsage: connect [IP]");
+                return;
+            }
+            if (ip !== targetIP) {
+                appendOutput(`\nFailed to connect to ${ip}. IP not recognized.`);
+                return;
+            }
+            if (!passwordObtained) {
+                appendOutput("\nAuthentication required. You need to obtain the password before connecting.");
+                appendOutput("Try using 'hack' commands to gain access.");
+                return;
+            }
+            if (connected) {
+                appendOutput(`\nAlready connected to ${ip}.`);
+                return;
+            }
+            connected = true;
+            appendOutput(`\nConnected to ${ip}`);
+            appendOutput("You are now connected to the target system.");
+            appendOutput(`\n${directoryPath}`);
+        }
+
+        function showInfo() {
+            if (!connected) {
+                appendOutput("\nNo active connection. Use 'connect [IP]' to connect.");
+                return;
+            }
+
+            if (gameCompleted) {
+                appendOutput(`\nTarget IP: ${targetIP}\nStatus: Hacked\nGoal Accomplished: ${goal}`);
+            } else {
+                appendOutput(`\nTarget IP: ${targetIP}\nStatus: Connected\nGoal: ${goal}`);
+            }
+        }
+
+        function attemptHack(method) {
+            if (!method) {
+                appendOutput("\nUsage: hack [method]");
+                appendOutput(`Available methods: ${requirements.join(', ')}`);
+                return;
+            }
+
+            method = method.toLowerCase();
+
+            if (!requirements.includes(method)) {
+                appendOutput(`\nHack failed using '${method}'. This method is not required.`);
+                return;
+            }
+
+            if (hackedMethodsUsed.includes(method)) {
+                appendOutput(`\nYou have already used the '${method}' method.`);
+                return;
+            }
+
+            // Simulate hacking process
+            appendOutput(`\nAttempting to hack using '${method}'...`);
+            setTimeout(() => {
+                hackedMethodsUsed.push(method);
+                appendOutput(`\nHack successful using '${method}'!`);
+
+                if (hackedMethodsUsed.length === requirements.length) {
+                    appendOutput("\nAll required hacking methods have been used.");
+                    appendOutput("Password obtained: " + password);
+                    passwordObtained = true;
+                } else {
+                    appendOutput(`Additional hacking methods required: ${requirements.filter(m => !hackedMethodsUsed.includes(m)).join(', ')}`);
+                }
+            }, 1500); // Simulate delay
+        }
+
+        function listDirectory() {
+            if (!connected) {
+                appendOutput("\nNo active connection. Use 'connect [IP]' to connect.");
+                return;
+            }
+
+            const items = Object.keys(currentDirectory).filter(item => item !== '_files');
+            const files = currentDirectory._files ? Object.keys(currentDirectory._files) : [];
+            let listing = '';
+
+            items.forEach(item => {
+                listing += `${item}/\n`;
+            });
+
+            files.forEach(file => {
+                listing += `${file}\n`;
+            });
+
+            appendOutput(`\n${listing}`);
+        }
+
+        function changeDirectory(dir) {
+            if (!connected) {
+                appendOutput("\nNo active connection. Use 'connect [IP]' to connect.");
+                return;
+            }
+
+            if (!dir) {
+                appendOutput("\nUsage: cd [directory]");
+                return;
+            }
+
+            if (dir === '/') {
+                currentDirectory = fileSystem;
+                directoryPath = '/';
+                appendOutput(`\nChanged directory to /`);
+                return;
+            }
+
+            if (dir === '..') {
+                if (directoryPath === '/') {
+                    appendOutput("\nAlready at root directory.");
+                    return;
+                }
+                const pathParts = directoryPath.split('/').filter(part => part !== '');
+                pathParts.pop();
+                directoryPath = '/' + pathParts.join('/') + '/';
+                currentDirectory = navigateToDirectory(directoryPath);
+                appendOutput(`\nChanged directory to ${directoryPath}`);
+                return;
+            }
+
+            if (currentDirectory[dir] && typeof currentDirectory[dir] === 'object') {
+                currentDirectory = currentDirectory[dir];
+                directoryPath += dir + '/';
+                appendOutput(`\nChanged directory to ${directoryPath}`);
+            } else {
+                appendOutput(`\nDirectory not found: ${dir}`);
+            }
+        }
+
+        function printWorkingDirectory() {
+            if (!connected) {
+                appendOutput("\nNo active connection. Use 'connect [IP]' to connect.");
+                return;
+            }
+            appendOutput(`\n${directoryPath}`);
+        }
+
+        function displayFile(file) {
+            if (!connected) {
+                appendOutput("\nNo active connection. Use 'connect [IP]' to connect.");
+                return;
+            }
+
+            if (!file) {
+                appendOutput("\nUsage: cat [file]");
+                return;
+            }
+
+            // Handle absolute paths
+            let targetDir = currentDirectory;
+            let targetPath = file;
+            if (file.startsWith('/')) {
+                targetPath = file.slice(1);
+                targetDir = navigateToDirectory('/');
+            }
+
+            const fileParts = targetPath.split('/');
+            const fileName = fileParts.pop();
+            const dirPath = fileParts.join('/');
+
+            if (dirPath) {
+                targetDir = navigateToDirectory('/' + dirPath + '/');
+            }
+
+            if (targetDir._files && targetDir._files[fileName]) {
+                appendOutput(`\n${targetDir._files[fileName]}`);
+
+                // Check if the retrieved file meets the goal
+                if (goal.toLowerCase().includes('retrieve') && fileName.toLowerCase().includes('secret')) {
+                    gameCompleted = true;
+                    appendOutput("\nYou have successfully retrieved the secret file!");
+                    displayWinningMessage();
+                } else if (goal.toLowerCase().includes('gain admin access') && fileName.toLowerCase().includes('passwords')) {
+                    gameCompleted = true;
+                    appendOutput("\nYou have successfully gained admin access!");
+                    displayWinningMessage();
+                } else if (goal.toLowerCase().includes('extract user data') && fileName.toLowerCase().includes('user_data')) {
+                    gameCompleted = true;
+                    appendOutput("\nYou have successfully extracted user data!");
+                    displayWinningMessage();
+                } else if (goal.toLowerCase().includes('obtain financial records') && fileName.toLowerCase().includes('financials')) {
+                    gameCompleted = true;
+                    appendOutput("\nYou have successfully obtained financial records!");
+                    displayWinningMessage();
+                } else if (goal.toLowerCase().includes('monitor network traffic') && fileName.toLowerCase().includes('network_log')) {
+                    gameCompleted = true;
+                    appendOutput("\nYou have successfully monitored network traffic!");
+                    displayWinningMessage();
+                }
+            } else {
+                appendOutput(`\nFile not found: ${file}`);
+            }
+        }
+
+        function deleteFile(file) {
+            if (!connected) {
+                appendOutput("\nNo active connection. Use 'connect [IP]' to connect.");
+                return;
+            }
+
+            if (!file) {
+                appendOutput("\nUsage: delete [file]");
+                return;
+            }
+
+            // Handle absolute paths
+            let targetDir = currentDirectory;
+            let targetPath = file;
+            if (file.startsWith('/')) {
+                targetPath = file.slice(1);
+                targetDir = navigateToDirectory('/');
+            }
+
+            const fileParts = targetPath.split('/');
+            const fileName = fileParts.pop();
+            const dirPath = fileParts.join('/');
+
+            if (dirPath) {
+                targetDir = navigateToDirectory('/' + dirPath + '/');
+            }
+
+            if (targetDir._files && targetDir._files[fileName]) {
+                delete targetDir._files[fileName];
+                appendOutput(`\nFile deleted: ${file}`);
+
+                // Check if deletion meets the goal
+                if (goal.toLowerCase().includes('delete') && fileName.toLowerCase().includes('critical_database')) {
+                    gameCompleted = true;
+                    appendOutput("\nYou have fulfilled your mission by deleting the critical database!");
+                    displayWinningMessage();
+                } else if (goal.toLowerCase().includes('disrupt communication channels') && (fileName.toLowerCase().includes('access.log') || fileName.toLowerCase().includes('system.log'))) {
+                    // Check if both access.log and system.log are deleted
+                    const accessLogExists = targetDir._files.hasOwnProperty('access.log');
+                    const systemLogExists = targetDir._files.hasOwnProperty('system.log');
+                    if (!accessLogExists && !systemLogExists) {
+                        gameCompleted = true;
+                        appendOutput("\nYou have successfully disrupted the communication channels!");
+                        displayWinningMessage();
+                    }
+                } else if (goal.toLowerCase().includes('delete a specific file') && fileName.toLowerCase().includes('specific_file.txt')) {
+                    gameCompleted = true;
+                    appendOutput("\nYou have successfully deleted the specific file!");
+                    displayWinningMessage();
+                }
+            } else {
+                appendOutput(`\nFile not found: ${file}`);
+            }
+        }
+
+        function makeDirectory(dir) {
+            if (!connected) {
+                appendOutput("\nNo active connection. Use 'connect [IP]' to connect.");
+                return;
+            }
+
+            if (!dir) {
+                appendOutput("\nUsage: mkdir [directory]");
+                return;
+            }
+
+            // Handle absolute paths
+            let targetDir = currentDirectory;
+            let targetPath = dir;
+            if (dir.startsWith('/')) {
+                targetPath = dir.slice(1);
+                targetDir = navigateToDirectory('/');
+            }
+
+            const dirParts = targetPath.split('/');
+            const dirName = dirParts.pop();
+            const parentPath = dirParts.join('/');
+
+            if (parentPath) {
+                targetDir = navigateToDirectory('/' + parentPath + '/');
+            }
+
+            if (targetDir[dirName]) {
+                appendOutput(`\nDirectory already exists: ${dir}`);
+                return;
+            }
+
+            targetDir[dirName] = {};
+            appendOutput(`\nDirectory created: ${dir}/`);
+        }
+
+        function uploadFile(file) {
+            if (!connected) {
+                appendOutput("\nNo active connection. Use 'connect [IP]' to connect.");
+                return;
+            }
+
+            if (!file) {
+                appendOutput("\nUsage: upload [file]");
+                return;
+            }
+
+            if (!localFileSystem._files || !localFileSystem._files[file]) {
+                appendOutput(`\nFile not found in local system: ${file}`);
+                return;
+            }
+
+            // Define the target directory where files can be uploaded, e.g., /home/user/uploads/
+            const uploadDirPath = '/home/user/uploads/';
+            const uploadDir = navigateToDirectory(uploadDirPath);
+
+            if (!uploadDir.uploads) {
+                uploadDir.uploads = {};
+            }
+
+            // Simulate uploading by copying the file from local to target
+            if (uploadDir._files && uploadDir._files[file]) {
+                appendOutput(`\nFile already exists in target directory: ${file}`);
+                return;
+            }
+
+            uploadDir._files[file] = localFileSystem._files[file];
+            appendOutput(`\nFile '${file}' uploaded successfully to ${uploadDirPath}`);
+
+            // Check if the goal is to upload malicious software
+            if (goal.toLowerCase().includes('upload malicious software') && (file.toLowerCase().includes('malware.sh') || file.toLowerCase().includes('virus.exe'))) {
+                gameCompleted = true;
+                appendOutput("\nYou have successfully uploaded malicious software!");
+                displayWinningMessage();
+            }
+        }
+
+        function provideHint() {
+            if (!connected) {
+                appendOutput("\nConnect to the target IP first using 'connect [IP]'.");
+                return;
+            }
+
+            let hint = "No hints available.";
+
+            if (goal.toLowerCase().includes('retrieve')) {
+                hint = "Use the 'cat' command to read files that might contain the secret information.";
+            } else if (goal.toLowerCase().includes('gain admin access')) {
+                hint = "Look for files that might contain admin credentials, such as 'passwords.txt'.";
+            } else if (goal.toLowerCase().includes('disable the security system')) {
+                hint = "Find and delete configuration files related to the security system.";
+            } else if (goal.toLowerCase().includes('extract user data')) {
+                hint = "Use the 'cat' command to read 'user_data.txt' located in the home directory.";
+            } else if (goal.toLowerCase().includes('plant a backdoor')) {
+                hint = "Create a new file in the system directory to simulate a backdoor.";
+            } else if (goal.toLowerCase().includes('monitor network traffic')) {
+                hint = "Use the 'cat' command to read 'network_log.txt' to simulate monitoring.";
+            } else if (goal.toLowerCase().includes('disrupt communication channels')) {
+                hint = "Delete both 'access.log' and 'system.log' files in the '/var/log/' directory.";
+            } else if (goal.toLowerCase().includes('upload malicious software')) {
+                hint = "Use the 'upload' command to transfer 'malware.sh' or 'virus.exe' from your local system.";
+            } else if (goal.toLowerCase().includes('delete critical databases')) {
+                hint = "Use the 'delete' command to remove 'critical_database.txt' from the appropriate directory.";
+            } else if (goal.toLowerCase().includes('obtain financial records')) {
+                hint = "Use the 'cat' command to read 'financials.txt' in the home directory.";
+            } else if (goal.toLowerCase().includes('delete a specific file')) {
+                hint = "Identify and delete 'specific_file.txt' using the 'delete' command.";
+            }
+
+            appendOutput(`\nHint: ${hint}`);
+        }
+
+        function clearTerminal() {
+            terminalOutput.innerText = '';
+        }
+
+        function exitGame() {
+            appendOutput("\nExiting game... Thank you for playing!");
+            commandInput.disabled = true;
+        }
+
+        function navigateToDirectory(path) {
+            const parts = path.split('/').filter(part => part !== '');
+            let dir = fileSystem;
+            for (let part of parts) {
+                if (dir[part]) {
+                    dir = dir[part];
+                } else {
+                    return fileSystem; // Fallback to root
+                }
+            }
+            return dir;
+        }
+
+        function displayWinningMessage() {
+            winningMessage.style.display = 'block';
+        }
+
+        // Randomization Functions
+
+        function generateRandomIP() {
+            return Array(4).fill(0).map(() => Math.floor(Math.random() * 256)).join('.');
+        }
+
+        function generateRandomGoal() {
+            const goals = [
+                "Retrieve the secret file",
+                "Gain admin access",
+                "Disable the security system",
+                "Extract user data",
+                "Plant a backdoor",
+                "Monitor network traffic",
+                "Disrupt communication channels",
+                "Upload malicious software",
+                "Delete critical databases",
+                "Obtain financial records",
+                "Delete a specific file"
+            ];
+            return goals[Math.floor(Math.random() * goals.length)];
+        }
+
+        function generateRandomRequirements() {
+            const methods = [
+                "brute-force",
+                "phishing",
+                "sql-injection",
+                "social-engineering",
+                "malware-deployment",
+                "denial-of-service",
+                "packet-sniffing",
+                "vulnerability-scanning",
+                "keylogging",
+                "reverse-engineering"
+            ];
+            // Select 2-3 random methods
+            const shuffled = shuffleArray(methods);
+            const numberOfRequirements = Math.floor(Math.random() * 2) + 2; // 2 or 3
+            return shuffled.slice(0, numberOfRequirements);
+        }
+
+        function generateRandomPassword() {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let pass = '';
+            for (let i = 0; i < 12; i++) {
+                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return pass;
+        }
+
+        function generateFileSystem() {
+            // Simple file system structure
+            return {
+                "home": {
+                    "user": {
+                        "_files": {
+                            "notes.txt": "These are some secret notes.",
+                            "passwords.txt": `Admin Password: ${password}`,
+                            "mission.txt": `Goal: ${goal}`,
+                            "secret.txt": "This is the secret file content.",
+                            "user_data.txt": "User data extracted successfully.",
+                            "financials.txt": "Financial records: Confidential.",
+                            "network_log.txt": "Network traffic monitored.",
+                            "specific_file.txt": "This is a specific file to be deleted."
+                        },
+                        "uploads": {
+                            "_files": {}
+                        }
+                    }
+                },
+                "var": {
+                    "log": {
+                        "_files": {
+                            "system.log": "System started successfully.",
+                            "access.log": "User accessed /home/user."
+                        }
+                    }
+                },
+                "etc": {
+                    "_files": {
+                        "config.cfg": "Configuration settings.",
+                        "hosts": "127.0.0.1 localhost"
+                    }
+                },
+                "_files": {
+                    "readme.md": "This is the root readme file."
+                }
+            };
+        }
+
+        function generateLocalFileSystem() {
+            return {
+                "_files": {
+                    "malware.sh": "echo 'Malicious software running...'",
+                    "virus.exe": "Binary data representing a virus.",
+                    "backdoor.py": "print('Backdoor activated')"
+                }
+            };
+        }
+
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+
+            // While there remain elements to shuffle...
+            while (currentIndex !== 0) {
+
+                // Pick a remaining element...
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+
+                // And swap it with the current element.
+                [array[currentIndex], array[randomIndex]] = [
+                    array[randomIndex], array[currentIndex]];
+            }
+
+            return array;
+        }
+    </script>
+</body>
+</html>
